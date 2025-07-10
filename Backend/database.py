@@ -18,6 +18,6 @@ try:
 except Exception as e:
     print(e)
 
-db = client["sample_mflix"]
+db = client["sorbet"]
 
 

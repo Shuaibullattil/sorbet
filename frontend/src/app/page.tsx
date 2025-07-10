@@ -1,4 +1,10 @@
-import Image from "next/image";
+import api from '../app/lib/axios';
+
+const fetchData = async () => {
+  const response = await api.get('/user/');
+  console.log(response.data);
+};
+
 
 export default function Home() {
   return (

@@ -12,7 +12,7 @@ const mockTransactions = [
     buyer: "Alice Johnson",
     seller: "Bob Smith",
     energyAmount: 15.5,
-    tokensSpent: 155,
+    
     timestamp: "2024-01-15T10:30:00Z",
     status: "completed"
   },
@@ -21,7 +21,7 @@ const mockTransactions = [
     buyer: "Carol Davis",
     seller: "David Wilson",
     energyAmount: 8.2,
-    tokensSpent: 82,
+   
     timestamp: "2024-01-14T14:20:00Z",
     status: "completed"
   },
@@ -30,7 +30,7 @@ const mockTransactions = [
     buyer: "Eva Brown",
     seller: "Frank Miller",
     energyAmount: 22.1,
-    tokensSpent: 221,
+    
     timestamp: "2024-01-13T09:15:00Z",
     status: "completed"
   },
@@ -39,7 +39,7 @@ const mockTransactions = [
     buyer: "Grace Lee",
     seller: "Henry Taylor",
     energyAmount: 12.8,
-    tokensSpent: 128,
+    
     timestamp: "2024-01-12T16:45:00Z",
     status: "completed"
   },
@@ -48,7 +48,7 @@ const mockTransactions = [
     buyer: "Ivy Chen",
     seller: "Jack Anderson",
     energyAmount: 18.9,
-    tokensSpent: 189,
+    
     timestamp: "2024-01-11T11:30:00Z",
     status: "completed"
   }
@@ -103,7 +103,7 @@ const TransactionHistoryPage: React.FC = () => {
         {/* Page Heading */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-800 mb-2">Transaction History</h2>
-          <p className="text-gray-600">View and track all your energy trading transactions and token spending</p>
+          <p className="text-gray-600">View and track all your energy trading transactions </p>
         </div>
         
         {/* Stats Cards */}
@@ -125,25 +125,11 @@ const TransactionHistoryPage: React.FC = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Energy Traded</p>
                 <p className="text-3xl font-bold text-gray-900">
-                  {mockTransactions.reduce((sum, tx) => sum + tx.energyAmount, 0).toFixed(1)} kWh
+                  {mockTransactions.reduce((sum, tx) => sum + tx.energyAmount, 0).toFixed(1)} Units
                 </p>
               </div>
               <div className="bg-blue-100 p-3 rounded-lg">
                 <Zap className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-green-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Tokens Spent</p>
-                <p className="text-3xl font-bold text-gray-900">
-                  {mockTransactions.reduce((sum, tx) => sum + tx.tokensSpent, 0)}
-                </p>
-              </div>
-              <div className="bg-yellow-100 p-3 rounded-lg">
-                <Coins className="w-6 h-6 text-yellow-600" />
               </div>
             </div>
           </div>
@@ -177,18 +163,12 @@ const TransactionHistoryPage: React.FC = () => {
                     <div className="text-right">
                       <div className="flex items-center space-x-1">
                         <Zap className="w-4 h-4 text-blue-500" />
-                        <span className="font-medium text-gray-900">{transaction.energyAmount} kWh</span>
+                        <span className="font-medium text-gray-900">{transaction.energyAmount} </span>
                       </div>
-                      <p className="text-sm text-gray-500">Energy Sold</p>
+                      <p className="text-sm text-gray-500">Units Sold</p>
                     </div>
                     
-                    <div className="text-right">
-                      <div className="flex items-center space-x-1">
-                        <Coins className="w-4 h-4 text-yellow-500" />
-                        <span className="font-medium text-gray-900">{transaction.tokensSpent}</span>
-                      </div>
-                      <p className="text-sm text-gray-500">Tokens Spent</p>
-                    </div>
+          
                     
                     <div className="bg-green-100 px-3 py-1 rounded-full">
                       <span className="text-sm font-medium text-green-700 capitalize">{transaction.status}</span>
@@ -200,20 +180,8 @@ const TransactionHistoryPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Backend Integration Note */}
-        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-start space-x-3">
-            <div className="bg-blue-100 p-2 rounded-lg">
-              <TrendingUp className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <h3 className="font-medium text-blue-900">Backend Integration Ready</h3>
-              <p className="text-sm text-blue-700 mt-1">
-                This page is designed to integrate with your backend API. Replace the mock data with real API calls to fetch transaction history from your database.
-              </p>
-            </div>
-          </div>
-        </div>
+
+       
       </div>
     </div>
   );

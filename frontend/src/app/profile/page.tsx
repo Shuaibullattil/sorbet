@@ -20,6 +20,7 @@ import {
 
 import dynamic from 'next/dynamic';
 const MapSection = dynamic(() => import('./mapSection'), { ssr: false });
+import { useAuthGuard } from "../lib/useAuthGuard";
 
 // Simple geocoding using OpenStreetMap Nominatim API
 async function geocodeLocation(query: string): Promise<{ lat: number; lng: number; address: string } | null> {
@@ -60,8 +61,8 @@ interface BackendUserData {
 }
 
 
-const ProfilePage: React.FC = () => {
-  const router = useRouter();
+export default function ProfilePage() {
+  const checked = useAuthGuard();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [isEditingLocation, setIsEditingLocation] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -211,43 +212,7 @@ const ProfilePage: React.FC = () => {
     setIsEditingLocation(false);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("token_type");
-    localStorage.removeItem("user");
-    router.push("/");
-  };
-
-  // Show loading state
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading profile...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show error state
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="bg-red-100 p-4 rounded-lg mb-4">
-            <p className="text-red-700">{error}</p>
-          </div>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
+  if (!checked) return null;
 
   if (!userData || !editedData) {
     return <div className="min-h-screen flex items-center justify-center">Loading profile...</div>;
@@ -450,5 +415,3 @@ const ProfilePage: React.FC = () => {
     </div>
   );
 };
-
-export default ProfilePage;

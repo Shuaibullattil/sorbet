@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import Users, Grids
+from routers import Users, Grids, Energypool
 
 app = FastAPI()
 
@@ -14,6 +14,7 @@ app.add_middleware(
 
 app.include_router(Users.router)
 app.include_router(Grids.router)
+app.include_router(Energypool.router)
 
 @app.get("/")
 async def root():

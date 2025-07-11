@@ -59,6 +59,16 @@ const router = useRouter();
           >
             <User className="w-5 h-5 text-green-600" />
           </button>
+          <button
+            onClick={() => {
+              localStorage.removeItem('token');
+              window.location.href = '/';
+            }}
+            className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition-colors duration-200 shadow-sm border border-red-200 text-red-600 font-semibold"
+            title="Logout"
+          >
+            Logout
+          </button>
         </div>
       </div>
     </nav>

@@ -118,6 +118,17 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     
     return convert_id(user)
 
+@router.get("/check_token_valid")
+async def check_token_valid(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = decode_token(token)
+        email = payload.get("sub")
+        if not email:
+            return {"valid": False, "message": "Invalid token: no subject."}
+        return {"valid": True, "message": "Token is valid."}
+    except Exception as e:
+        return {"valid": False, "message": str(e)}
+
 
 
 

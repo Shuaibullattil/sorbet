@@ -1,11 +1,13 @@
 "use client"
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Bell, User, Wallet, Zap, TrendingUp, TrendingDown, Battery, LucideIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation'
+import Navbar from "../components/Powersharenavbar";
 import SellEnergyModal from "../components/SellEnergyModal";
 import api from "../lib/axios";
+import { useAuthGuard } from "../lib/useAuthGuard";
 import Navbar from "../components/Powersharenavbar";
 
 // Type definitions
@@ -153,80 +155,39 @@ const EnergyChart: React.FC = () => (
 
 // Main Dashboard Component
 const PowerShareDashboard: React.FC = () => {
+  const checked = useAuthGuard();
   const [remainingTokens] = useState<number>(1250);
-  const [availableUnits, setAvailableUnits] = useState<number>(85);
-  const [unitsForSell, setUnitsForSell] = useState<number>(42);
+  const [availableUnits, setAvailableUnits] = useState<number>(0);
+  const [unitsForSell, setUnitsForSell] = useState<number>(0);
   const [sellModalOpen, setSellModalOpen] = useState(false);
-  const [refreshError, setRefreshError] = useState<string | null>(null);
   const router = useRouter();
 
-  // Helper function to extract error message safely
-  const extractErrorMessage = (err: any): string => {
+  // Fetch units from API
+  const fetchUnits = async () => {
     try {
-      const errData = err.response?.data;
-      
-      // If it's a string, return it directly
-      if (typeof errData === "string") {
-        return errData;
-      }
-      
-      // Check for common error message fields
-      if (errData?.detail && typeof errData.detail === 'string') {
-        return errData.detail;
-      }
-      
-      if (errData?.message && typeof errData.message === 'string') {
-        return errData.message;
-      }
-      
-      // Handle validation errors (array format)
-      if (Array.isArray(errData) && errData.length > 0) {
-        const firstError = errData[0];
-        if (firstError?.msg && typeof firstError.msg === 'string') {
-          return firstError.msg;
-        }
-        if (typeof firstError === 'string') {
-          return firstError;
-        }
-      }
-      
-      // Handle single validation error object
-      if (errData?.msg && typeof errData.msg === 'string') {
-        return errData.msg;
-      }
-      
-      // Fallback to generic error message
-      return err.message || "An unexpected error occurred while refreshing data.";
-    } catch (parseError) {
-      return "Failed to parse error response.";
-    }
-  };
-
-  // Function to refresh dashboard data after selling
-  const refreshUnits = async () => {
-    try {
-      setRefreshError(null);
       const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-      
-      if (!token) {
-        console.warn("No authentication token found");
-        return;
-      }
-      
+      if (!token) return;
       const res = await api.get("/grid/get_unit_status", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      
       const data = res.data as { units: number; units_for_sell: number };
       setAvailableUnits(data.units);
       setUnitsForSell(data.units_for_sell);
-      
-    } catch (err: any) {
-      const errorMessage = extractErrorMessage(err);
-      setRefreshError(errorMessage);
-      console.error("Error refreshing units:", errorMessage);
+    } catch (err) {
+      // Optionally handle error
     }
   };
+
+  useEffect(() => {
+    fetchUnits();
+  }, []);
+
+  // Optionally, add a function to refresh dashboard data after selling
+  const refreshUnits = async () => {
+    await fetchUnits();
+  };
+
+  if (!checked) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
@@ -236,14 +197,6 @@ const PowerShareDashboard: React.FC = () => {
           <h2 className="text-3xl font-bold text-gray-800 mb-2">Dashboard</h2>
           <p className="text-gray-600">Monitor your energy trading activity and manage your green energy portfolio</p>
         </div>
-        
-        {/* Display refresh error if any */}
-        {refreshError && (
-          <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3">
-            <p className="text-red-700 text-sm">Error refreshing data: {refreshError}</p>
-          </div>
-        )}
-        
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Chart Section */}
           <div className="lg:col-span-2">
@@ -252,38 +205,27 @@ const PowerShareDashboard: React.FC = () => {
           {/* Stats Section */}
           <div className="space-y-6">
             <div className='flex items-center justify-between'>
-              <button 
-                onClick={() => router.push('/mygrid')}
-                className='p-8 bg-yellow-400 text-white hover:bg-yellow-500 rounded-3xl font-bold transition-colors duration-200'
-              >
-                MY POWER GRID
-              </button>
+                <p onClick={() => router.push('/mygrid')}className='p-8 bg-yellow-400 text-white hover:bg-yellow-200 rounded-3xl font-bold'>MY POWER GRID</p>
             </div>
             <StatCard 
               title="Available Units" 
               value={availableUnits} 
               icon={TrendingUp}
-              trend={12.3}
               color="green"
             />
             <StatCard 
               title="Units for Sale" 
               value={unitsForSell} 
               icon={TrendingDown}
-              trend={-5.7}
-              color="orange"
+              color="blue"
             />
           </div>
         </div>
-        
         {/* Action Buttons */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="col-span-2 flex gap-4">
             <button 
-              onClick={() => {
-                console.log('Buy Energy clicked');
-                // Add buy logic here
-              }}
+              onClick={() => {router.push('/buy_energy')}}
               className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white py-4 px-8 rounded-xl font-semibold text-lg hover:from-green-600 hover:to-green-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
             >
               Buy Energy
@@ -297,12 +239,7 @@ const PowerShareDashboard: React.FC = () => {
           </div>
         </div>
       </div>
-      
-      <SellEnergyModal 
-        open={sellModalOpen} 
-        onClose={() => setSellModalOpen(false)} 
-        onSuccess={refreshUnits} 
-      />
+      <SellEnergyModal open={sellModalOpen} onClose={() => setSellModalOpen(false)} onSuccess={refreshUnits} />
     </div>
   );
 };

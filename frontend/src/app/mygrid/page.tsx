@@ -320,7 +320,7 @@ export default function MyGridPage() {
                   <span className="text-gray-700 font-medium">Available Units:</span>
                   {editMode ? (
                     <input
-                      type="number"
+                      type="text"
                       name="units"
                       value={form.units}
                       onChange={handleInputChange}

@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Bell, User, Wallet, Zap, TrendingUp, TrendingDown, Battery, LucideIcon } from 'lucide-react';
+import { Bell, User, Wallet, Zap, TrendingUp, TrendingDown, Battery, LucideIcon, History } from 'lucide-react';
 import { useRouter } from 'next/navigation'
 
 const Navbar: React.FC = () => {
@@ -31,6 +31,14 @@ const router = useRouter();
             title="Wallet"
           >
             <Wallet className="w-5 h-5 text-green-600" />
+          </button>
+          
+          <button 
+            onClick={() => handleNavigation('/transactions')}
+            className="p-2 rounded-lg bg-white hover:bg-green-50 transition-colors duration-200 shadow-sm border border-green-200"
+            title="Transaction History"
+          >
+            <History className="w-5 h-5 text-green-600" />
           </button>
           
           <button 

@@ -8,6 +8,7 @@ import Navbar from "../components/Powersharenavbar";
 import SellEnergyModal from "../components/SellEnergyModal";
 import api from "../lib/axios";
 import { useAuthGuard } from "../lib/useAuthGuard";
+import Navbar from "../components/Powersharenavbar";
 
 // Type definitions
 interface EnergyData {
@@ -97,6 +98,8 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, trend, co
     </Card>
   );
 };
+
+<Navbar/>
 
 // Chart Component
 const EnergyChart: React.FC = () => (

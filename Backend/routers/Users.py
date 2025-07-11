@@ -1,5 +1,5 @@
 import os
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from database import db
 from bson import ObjectId
 from models import UserModel, UserLogin
@@ -98,6 +98,25 @@ async def login(data: UserLogin):
     token = create_token({"sub": user["email"]})
     return {"token": token, "token_type": "bearer"}
 
+@router.get("/me")
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    payload = decode_token(token)
+    email = payload.get("sub")
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    user = collection.find_one({"email": email})
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    return convert_id(user)
 
 
 

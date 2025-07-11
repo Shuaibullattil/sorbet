@@ -236,6 +236,7 @@ const PowerShareDashboard: React.FC = () => {
   const [remainingTokens] = useState<number>(1250);
   const [availableUnits] = useState<number>(85);
   const [unitsForSell] = useState<number>(42);
+  const router = useRouter();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
@@ -255,6 +256,9 @@ const PowerShareDashboard: React.FC = () => {
           
           {/* Stats Section */}
           <div className="space-y-6">
+            <div className='flex items-center justify-between'>
+                <p onClick={() => router.push('/mygrid')}className='p-8 bg-yellow-400 text-white hover:bg-yellow-200 rounded-3xl font-bold'>MY POWER GRID</p>
+            </div>
             <StatCard 
               title="Remaining Tokens" 
               value={remainingTokens.toLocaleString()} 

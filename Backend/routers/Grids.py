@@ -80,4 +80,32 @@ async def get_user_grid(token: str = Depends(oauth2_scheme)):
     grid["user"] = str(grid["user"])
     return grid
 
+@router.post("/update_units")
+async def update_units(units: int, token: str = Depends(oauth2_scheme)):
+    payload = decode_token(token)
+    email = payload.get("sub")
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    user = collection.find_one({"email": email}, {"_id": 1, "name": 0, "email": 0, "mobile": 0, "password": 0})
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    grid = Grid_Collection.find_one({"user": ObjectId(user["_id"])})
+    if not grid:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Grid not found for this user"
+        )
+    Grid_Collection.update_one(
+        {"_id": grid["_id"]},
+        {"$set": {"units": units}})
+    return {"message": "Units updated successfully", "units": units}    
+    
+
 

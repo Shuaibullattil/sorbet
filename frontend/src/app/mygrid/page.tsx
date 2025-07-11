@@ -6,6 +6,7 @@ import { Navbar } from "../components/Powersharenavbar";
 import { useRouter } from "next/navigation";
 const UserGridMap = dynamic(() => import("./UserGridMap"), { ssr: false });
 import api from "../lib/axios";
+import { Dialog } from "@headlessui/react";
 
 interface GridData {
   _id: string;
@@ -14,6 +15,11 @@ interface GridData {
   location: { latitude: number; longitude: number };
   units: number;
   available: boolean;
+}
+
+interface UpdateUnitsResponse {
+  message: string;
+  units: number;
 }
 
 export default function MyGridPage() {
@@ -26,6 +32,8 @@ export default function MyGridPage() {
     units: 0,
   });
   const hardcodedPrice = 7.5;
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
 
   useEffect(() => {
     const fetchGrid = async () => {
@@ -65,10 +73,32 @@ export default function MyGridPage() {
     setForm(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleUpdate = () => {
-    // TODO: Implement update API call if available
-    setGridData(prev => prev && { ...prev, ...form });
-    setEditMode(false);
+  const handleUpdate = async () => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    if (!token) {
+      router.replace("/");
+      return;
+    }
+    try {
+      const res = await api.post<UpdateUnitsResponse>(
+        `/grid/update_units?units=${form.units}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (res.data && res.data.units !== undefined) {
+        setGridData(prev => prev && { ...prev, units: res.data.units });
+        setSuccessMsg(res.data.message || "Units updated successfully");
+        setShowSuccess(true);
+        setEditMode(false);
+      }
+    } catch (err) {
+      setSuccessMsg("Failed to update units");
+      setShowSuccess(true);
+    }
   };
 
   const handleCreate = () => {
@@ -172,6 +202,19 @@ export default function MyGridPage() {
           </div>
         </div>
       </div>
+      {/* Success Popup */}
+      <Dialog open={showSuccess} onClose={() => setShowSuccess(false)} className="fixed z-50 inset-0 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+        <div className="relative bg-white rounded-xl shadow-xl p-8 max-w-sm mx-auto flex flex-col items-center">
+          <h2 className="text-lg font-semibold mb-2">{successMsg}</h2>
+          <button
+            onClick={() => setShowSuccess(false)}
+            className="mt-4 px-6 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700"
+          >
+            Close
+          </button>
+        </div>
+      </Dialog>
     </div>
   );
 }

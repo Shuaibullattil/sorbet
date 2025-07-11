@@ -20,6 +20,7 @@ class UserGrid(BaseModel):
     location: Location
     units : int
     available: bool = True
+    units_for_sell: int = 0
     
 
     

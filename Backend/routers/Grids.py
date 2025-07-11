@@ -1,6 +1,6 @@
 import os
 from .Users import create_token, decode_token
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Body
 from database import db
 from bson import ObjectId
 from models import UserModel, UserLogin, Location, UserGrid
@@ -47,7 +47,8 @@ async def insert_new_grid(grid: UserGrid,token: str = Depends(oauth2_scheme)):
             "longitude": grid.location.longitude
             },
         "units": grid.units,
-        "available": grid.available
+        "available": grid.available,
+        "units_for_sell": grid.units_for_sell
         }
     result = Grid_Collection.insert_one(new_grid)
     return {
@@ -106,6 +107,77 @@ async def update_units(units: int, token: str = Depends(oauth2_scheme)):
         {"_id": grid["_id"]},
         {"$set": {"units": units}})
     return {"message": "Units updated successfully", "units": units}    
+
+@router.post("/sell_units")
+async def sell_units(units: int = Body(..., embed=True), token: str = Depends(oauth2_scheme)):
+    payload = decode_token(token)
+    email = payload.get("sub")
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    user = collection.find_one({"email": email}, {"_id": 1})
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    grid = Grid_Collection.find_one({"user": ObjectId(user["_id"])})
+    if not grid:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Grid not found for this user"
+        )
+    if units <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Units to sell must be positive."
+        )
+    if grid["units"] < units:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Not enough units available to sell."
+        )
+    new_units = grid["units"] - units
+    new_units_for_sell = grid.get("units_for_sell", 0) + units
+    Grid_Collection.update_one(
+        {"_id": grid["_id"]},
+        {"$set": {"units": new_units, "units_for_sell": new_units_for_sell}}
+    )
+    return {
+        "message": f"{units} units moved to sell pool.",
+        "units": new_units,
+        "units_for_sell": new_units_for_sell
+    }
+    
+@router.get("/get_unit_status")
+async def get_units(token: str = Depends(oauth2_scheme)):
+    payload = decode_token(token)
+    email = payload.get("sub")
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    user = collection.find_one({"email": email}, {"_id": 1})
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    grid = Grid_Collection.find_one({"user": ObjectId(user["_id"])})
+    if not grid:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Grid not found for this user"
+        )
+    return {
+        "units": grid.get("units", 0),
+        "units_for_sell": grid.get("units_for_sell", 0)
+    }
     
 
 

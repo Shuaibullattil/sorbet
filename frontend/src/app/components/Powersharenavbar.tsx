@@ -56,3 +56,6 @@ const router = useRouter();
     </nav>
   );
 };
+
+export { Navbar };
+export default Navbar;

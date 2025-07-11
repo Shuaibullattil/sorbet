@@ -128,3 +128,74 @@ async def buy_energy(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Purchase failed: {str(e)}"
         )
+
+@router.get("/transaction_history")
+async def transaction_history(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = decode_token(token)
+        email = payload.get("sub")
+        if not email:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication credentials",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        user = collection.find_one({"email": email}, {"_id": 1, "name": 1})
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        # Find all grids owned by the user
+        user_grids = list(Grid_Collection.find({"user": user["_id"]}))
+        user_grid_ids = [g["_id"] for g in user_grids]
+        # Transactions where user is buyer
+        tx_buyer = list(Transaction_Collection.find({"buyer": user["_id"]}))
+        # Transactions where user's grid is the seller
+        tx_seller = list(Transaction_Collection.find({"grid": {"$in": user_grid_ids}}))
+        result = []
+        total_units = 0
+        total_units_sold = 0
+        for tx in tx_buyer:
+            grid = Grid_Collection.find_one({"_id": tx["grid"]})
+            grid_name = grid.get("grid name") if grid else None
+            result.append({
+                "transaction_id": str(tx["_id"]),
+                "user_name": user.get("name"),
+                "grid_name": grid_name,
+                "units": tx.get("units", 0),
+                "time": tx.get("time"),
+                "status": tx.get("status"),
+                "role": "bought"
+            })
+            total_units += tx.get("units", 0)
+        for tx in tx_seller:
+            # Avoid duplicate if user bought from own grid
+            if tx["buyer"] == user["_id"]:
+                continue
+            buyer_doc = collection.find_one({"_id": tx["buyer"]})
+            buyer_name = buyer_doc.get("name") if buyer_doc else None
+            grid = Grid_Collection.find_one({"_id": tx["grid"]})
+            grid_name = grid.get("grid name") if grid else None
+            result.append({
+                "transaction_id": str(tx["_id"]),
+                "user_name": buyer_name,
+                "grid_name": grid_name,
+                "units": tx.get("units", 0),
+                "time": tx.get("time"),
+                "status": tx.get("status"),
+                "role": "sold"
+            })
+            total_units_sold += tx.get("units", 0)
+        return {
+            "transactions": result,
+            "total_transactions": len(result),
+            "total_units_bought": total_units,
+            "total_units_sold": total_units_sold
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to fetch transaction history: {str(e)}"
+        )

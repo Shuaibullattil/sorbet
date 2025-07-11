@@ -200,7 +200,7 @@ const NotificationsPage: React.FC = () => {
       <Navbar />
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="lg:ml-64 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Heading */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-800 mb-2">Notifications</h2>

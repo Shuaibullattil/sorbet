@@ -256,7 +256,7 @@ export default function MyGridPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
       <Navbar />
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="lg:ml-64 max-w-7xl mx-auto p-6">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-800 mb-2">My Power Grid</h1>
           <p className="text-gray-600">Manage your renewable energy distribution network</p>

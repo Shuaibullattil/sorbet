@@ -1,4 +1,5 @@
 from pydantic import BaseModel, EmailStr
+from bson import ObjectId
 
 class UserModel(BaseModel):
     name : str
@@ -9,3 +10,16 @@ class UserModel(BaseModel):
 class UserLogin(BaseModel):
     email : EmailStr
     password : str
+
+class Location(BaseModel):
+    latitude: float
+    longitude: float
+    
+class UserGrid(BaseModel):
+    location: Location
+    units : int
+    available: bool = True
+    
+
+    
+    

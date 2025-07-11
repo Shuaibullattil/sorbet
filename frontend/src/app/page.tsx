@@ -1,211 +1,212 @@
-'use client';
-import React, { useState } from 'react';
-import  {useRouter} from 'next/navigation';
-import { Eye, EyeOff, Zap, Mail, Lock, User, ArrowRight } from 'lucide-react';
+"use client";
+
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  User,
+  ArrowRight,
+  Zap,
+} from "lucide-react";
 
 const PowerShareLogin = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [isShowPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    confirmPassword: '',
-    name: ''
+    email: "",
+    mobile: "",
+    password: "",
+    confirmPassword: "",
+    name: "",
   });
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const handleInputChange = (e: any) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+    setError(null);
   };
 
   const handleSubmit = () => {
-    // Handling login/registration logic
-    console.log('Form submitted:', formData);
-    if (isLogin) {
-      if (formData.email === '') {
-        alert('Email is required')
-        setError(true);
-        return;
-      }
-      if (formData.password.length < 6 || formData.password === "") {
-        setError(true);
-        alert('Password must be at least 6 characters long');
-        return;
-      }
-      alert('Login functionality need to be implemented');
-    } else {
-      alert('Registration functionality need to be implemented');
+    if (!formData.email) {
+      setError("Email is required");
+      return;
     }
-   if (!error) {
-      router.push('/dashboard');
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
     }
+    if (!isLogin && formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+    if (!isLogin && !formData.name.trim()) {
+      setError("Name is required");
+      return;
+    }
+
+    setError(null);
+    router.push("/dashboard");
   };
 
   const toggleAuthMode = () => {
     setIsLogin(!isLogin);
     setFormData({
-      email: '',
-      password: '',
-      confirmPassword: '',
-      name: ''
+      email: "",
+      mobile: "",
+      password: "",
+      confirmPassword: "",
+      name: "",
     });
+    setError(null);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-emerald-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo and Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-blue-500 rounded-full mb-4">
-            <Zap className="w-8 h-8 text-white" />
+    <div className="min-h-screen flex bg-[#FDF6EC] text-[#2C2C2C]">
+      {/* Left side: Form */}
+      <div className="w-full md:w-1/2 flex items-center justify-center px-6">
+        <div className="w-full max-w-md">
+          <div className="flex items-center mb-6 space-x-2">
+            <div className="bg-[#F2B705] p-3 rounded-full">
+              <Zap className="text-white w-6 h-6" />
+            </div>
+            <h1 className="text-3xl font-bold">PowerShare</h1>
           </div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">PowerShare</h1>
-          <p className="text-gray-600">Decentralized Energy Sharing</p>
-        </div>
 
-        {/* Auth Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-          <div className="mb-6">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-2">
-              {isLogin ? 'Welcome Back' : 'Join PowerShare'}
-            </h2>
-            <p className="text-gray-600 text-sm">
-              {isLogin 
-                ? 'Sign in to your account to continue' 
-                : 'Create an account to start sharing power'
-              }
-            </p>
-          </div>
+          <h2 className="text-2xl font-semibold mb-1">
+            {isLogin ? "Welcome Back" : "Join the Solar Movement"}
+          </h2>
+          <p className="mb-6 text-sm text-[#555]">
+            {isLogin
+              ? "Log in to access community-powered EV charging"
+              : "Create an account to start sharing your energy"}
+          </p>
 
           <div className="space-y-4">
-            {/* Name Field (Registration Only) */}
             {!isLogin && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Name:
-                </label>
+                <label className="block mb-1 text-sm font-medium">Name:</label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input
-                    type="text"
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
+                    className="pl-10 pr-4 py-2 w-full border italic border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F2B705] outline-none"
                     placeholder="Enter your name"
-                    required={!isLogin}
                   />
                 </div>
               </div>
             )}
 
-            {/* Email Field */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email ID:
-              </label>
+              <label className="block mb-1 text-sm font-medium">Email:</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
-                  type="email"
                   name="email"
+                  type="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
-                  placeholder="Enter your email address" 
-                  required
+                  className="pl-10 pr-4 py-2 w-full border italic border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F2B705] outline-none"
+                  placeholder="Enter your email address"
                 />
               </div>
-            </div>            
-
-            {/* Password Field */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Password:
-              </label>
+            </div>
+            {!isLogin &&
+             (<div>
+              <label className="block mb-1 text-sm font-medium">Mobile Number:</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
-                  type={isShowPassword ? 'text' : 'password'}
+                  name="mobile"
+                  type="mobile"
+                  value={formData.mobile}
+                  onChange={handleInputChange}
+                  className="pl-10 pr-4 py-2 w-full border italic border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F2B705] outline-none"
+                  placeholder="Enter your mobile number"
+                />
+              </div>
+            </div>)}
+
+            <div>
+              <label className="block mb-1 text-sm font-medium">Password:</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
                   name="password"
+                  type={isShowPassword ? "text" : "password"}
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
+                  className="pl-10 pr-12 py-2 w-full border italic border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F2B705] outline-none"
                   placeholder="Enter your password"
-                  required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!isShowPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
                 >
-                  {isShowPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {isShowPassword ? <EyeOff /> : <Eye />}
                 </button>
               </div>
             </div>
 
-            {/* Confirm Password Field (Registration Only) */}
             {!isLogin && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Confirm Password
-                </label>
+                <label className="block mb-1 text-sm font-medium">Confirm Password:</label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input
-                    type={isShowPassword ? 'text' : 'password'}
                     name="confirmPassword"
+                    type={isShowPassword ? "text" : "password"}
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
-                    placeholder="Confirm your password"
-                    required={!isLogin}
+                    className="pl-10 pr-4 py-2 w-full border italic border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F2B705] outline-none"
+                    placeholder="Re-enter your password"
                   />
                 </div>
               </div>
             )}
 
-            {/* Submit Button */}
+            {error && (
+              <p className="text-sm text-red-600 text-center">{error}</p>
+            )}
+
             <button
               onClick={handleSubmit}
-              className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white py-3 px-4 rounded-lg font-medium hover:from-green-600 hover:to-blue-600 transition-all duration-200 flex items-center justify-center space-x-2 group"
+              className="w-full py-2 bg-[#1F7A8C] text-white rounded-lg hover:bg-[#18606F] transition font-medium flex justify-center items-center space-x-2"
             >
-              <span>{isLogin ? 'Sign In' : 'Create Account'}</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              <span>{isLogin ? "Sign In" : "Create Account"}</span>
+              <ArrowRight className="w-4 h-4" />
             </button>
-
-            {/* Terms Agreement (Registration Only) */}
-            {!isLogin && (
-              <p className="text-xs text-gray-600 text-center">
-                By creating an account, you agree to our{' '}
-                <a className="text-green-600 hover:text-green-700">Terms of Service</a>{' '}
-                and{' '}
-                <a className="text-green-600 hover:text-green-700">Privacy Policy</a>
-              </p>
-            )}
           </div>
 
-          {/* Toggle Auth Mode */}
-          <div className="mt-6 text-center border-t border-gray-200 pt-6">
-            <p className="text-sm text-gray-600">
-              {isLogin ? "Don't have an account?" : "Already have an account?"}
-              <button
-                onClick={toggleAuthMode}
-                className="ml-1 text-green-600 hover:text-green-700 font-medium transition-colors"
-              >
-                {isLogin ? 'Sign up' : 'Sign in'}
-              </button>
-            </p>
-          </div>
+          <p className="text-sm text-center mt-6 text-gray-600">
+            {isLogin ? "Don't have an account?" : "Already have an account?"}
+            <button
+              onClick={toggleAuthMode}
+              className="ml-1 font-medium text-[#F2B705] hover:text-[#E89A00]"
+            >
+              {isLogin ? "Sign up" : "Sign in"}
+            </button>
+          </p>
         </div>
+      </div>
 
-        {/* Footer */}
-        <div className="text-center mt-8 text-sm text-gray-500">
-          <p>Connecting communities through clean energy</p>
+     
+      <div className="hidden md:flex w-1/2 items-center justify-center bg-[#FFEABF]">
+        <div className="max-w-xs text-center px-6">
+          <p className="text-lg italic text-[#333] mb-4">
+            “Lets share power.”
+          </p>
+          <img alt="power share"></img>
         </div>
       </div>
     </div>

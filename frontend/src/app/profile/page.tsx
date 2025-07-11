@@ -18,11 +18,9 @@ import {
   X
 } from 'lucide-react';
 
+import { useAuthGuard } from "../lib/useAuthGuard";
 import dynamic from 'next/dynamic';
 const MapSection = dynamic(() => import('./mapSection'), { ssr: false });
-import { useAuthGuard } from "../lib/useAuthGuard";
-
-const router = useRouter();
 
 // Simple geocoding using OpenStreetMap Nominatim API
 async function geocodeLocation(query: string): Promise<{ lat: number; lng: number; address: string } | null> {
@@ -64,6 +62,7 @@ interface BackendUserData {
 
 
 export default function ProfilePage() {
+  const router = useRouter();
   const checked = useAuthGuard();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [isEditingLocation, setIsEditingLocation] = useState(false);
@@ -212,6 +211,13 @@ export default function ProfilePage() {
     setEditedData(userData);
     setIsEditingProfile(false);
     setIsEditingLocation(false);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("token_type");
+    localStorage.removeItem("user");
+    router.push("/");
   };
 
   if (!checked) return null;

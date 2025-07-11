@@ -16,6 +16,7 @@ class Location(BaseModel):
     longitude: float
     
 class UserGrid(BaseModel):
+    grid_name: str
     location: Location
     units : int
     available: bool = True

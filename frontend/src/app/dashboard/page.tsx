@@ -260,14 +260,6 @@ const PowerShareDashboard: React.FC = () => {
                 <p onClick={() => router.push('/mygrid')}className='p-8 bg-yellow-400 text-white hover:bg-yellow-200 rounded-3xl font-bold'>MY POWER GRID</p>
             </div>
             <StatCard 
-              title="Remaining Tokens" 
-              value={remainingTokens.toLocaleString()} 
-              icon={Battery}
-              trend={8.5}
-              color="blue"
-            />
-            
-            <StatCard 
               title="Available Units" 
               value={availableUnits} 
               icon={TrendingUp}

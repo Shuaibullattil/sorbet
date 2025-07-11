@@ -20,10 +20,11 @@ L.Icon.Default.mergeOptions({
 });
 
 interface UserData {
+  _id: string;
   name: string;
   email: string;
-  phone: string;
-  tokens: number;
+  mobile: string;
+  tokens?: number;
   location: {
     lat: number;
     lng: number;

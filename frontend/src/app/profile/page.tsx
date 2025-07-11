@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Navbar from '../components/Powersharenavbar';
+import api from '../lib/axios';
 import {
   User,
   Mail,
@@ -38,10 +40,11 @@ async function geocodeLocation(query: string): Promise<{ lat: number; lng: numbe
 }
 
 interface UserData {
+  _id: string;
   name: string;
   email: string;
-  phone: string;
-  tokens: number;
+  mobile: string;
+  tokens?: number;
   location: {
     lat: number;
     lng: number;
@@ -49,114 +52,156 @@ interface UserData {
   };
 }
 
+interface BackendUserData {
+  _id: string;
+  name: string;
+  email: string;
+  mobile: string;
+}
+
 
 const ProfilePage: React.FC = () => {
+  const router = useRouter();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [isEditingLocation, setIsEditingLocation] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editedData, setEditedData] = useState<UserData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Set default location to current location on mount
-  React.useEffect(() => {
-    if (!userData) {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
-            setUserData({
-              name: 'Alex Johnson',
-              email: 'alex.johnson@email.com',
-              phone: '+1 (555) 123-4567',
-              tokens: 1247.5,
-              location: {
-                lat,
-                lng,
-                address: 'Current Location'
-              }
-            });
-            setEditedData({
-              name: 'Alex Johnson',
-              email: 'alex.johnson@email.com',
-              phone: '+1 (555) 123-4567',
-              tokens: 1247.5,
-              location: {
-                lat,
-                lng,
-                address: 'Current Location'
-              }
-            });
-          },
-          () => {
-            // Fallback to Kochi if geolocation fails
-            setUserData({
-              name: 'Alex Johnson',
-              email: 'alex.johnson@email.com',
-              phone: '+1 (555) 123-4567',
-              tokens: 1247.5,
-              location: {
-                lat: 9.9312,
-                lng: 76.2673,
-                address: 'Kochi, Kerala, India'
-              }
-            });
-            setEditedData({
-              name: 'Alex Johnson',
-              email: 'alex.johnson@email.com',
-              phone: '+1 (555) 123-4567',
-              tokens: 1247.5,
-              location: {
-                lat: 9.9312,
-                lng: 76.2673,
-                address: 'Kochi, Kerala, India'
-              }
-            });
-          }
-        );
-      } else {
-        setUserData({
-          name: 'Alex Johnson',
-          email: 'alex.johnson@email.com',
-          phone: '+1 (555) 123-4567',
-          tokens: 1247.5,
-          location: {
-            lat: 9.9312,
-            lng: 76.2673,
-            address: 'Kochi, Kerala, India'
-          }
+  // Fetch user data from backend on component mount
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+        
+        if (!token) {
+          console.warn("No authentication token found, redirecting to login");
+          router.push("/");
+          return;
+        }
+
+        const response = await api.get("/user/me", {
+          headers: { Authorization: `Bearer ${token}` }
         });
-        setEditedData({
-          name: 'Alex Johnson',
-          email: 'alex.johnson@email.com',
-          phone: '+1 (555) 123-4567',
-          tokens: 1247.5,
-          location: {
-            lat: 9.9312,
-            lng: 76.2673,
-            address: 'Kochi, Kerala, India'
-          }
-        });
+
+        const backendUserData = response.data as BackendUserData;
+        
+        // Get current location
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              const lat = pos.coords.latitude;
+              const lng = pos.coords.longitude;
+              const userDataWithLocation: UserData = {
+                ...backendUserData,
+                tokens: 1247.5, // TODO: Get from backend
+                location: {
+                  lat,
+                  lng,
+                  address: 'Current Location'
+                }
+              };
+              setUserData(userDataWithLocation);
+              setEditedData(userDataWithLocation);
+              setIsLoading(false);
+            },
+            () => {
+              // Fallback to Kochi if geolocation fails
+              const userDataWithLocation: UserData = {
+                ...backendUserData,
+                tokens: 1247.5, // TODO: Get from backend
+                location: {
+                  lat: 9.9312,
+                  lng: 76.2673,
+                  address: 'Kochi, Kerala, India'
+                }
+              };
+              setUserData(userDataWithLocation);
+              setEditedData(userDataWithLocation);
+              setIsLoading(false);
+            }
+          );
+        } else {
+          // No geolocation support
+          const userDataWithLocation: UserData = {
+            ...backendUserData,
+            tokens: 1247.5, // TODO: Get from backend
+            location: {
+              lat: 9.9312,
+              lng: 76.2673,
+              address: 'Kochi, Kerala, India'
+            }
+          };
+          setUserData(userDataWithLocation);
+          setEditedData(userDataWithLocation);
+          setIsLoading(false);
+        }
+      } catch (err: any) {
+        console.error("Error fetching user data:", err);
+        setError(err.response?.data?.detail || "Failed to fetch user data");
+        setIsLoading(false);
       }
-    }
-  }, [userData]);
+    };
+
+    fetchUserData();
+  }, [router]);
 
 
 
 
-  const handleSaveLocation = () => {
-    if (editedData) {
-      setUserData(prev => ({
-        ...prev!,
-        location: editedData.location
-      }));
-      setIsEditingLocation(false);
+  const handleSaveLocation = async () => {
+    if (editedData && editedData.location) {
+      try {
+        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+        if (!token) {
+          router.push("/");
+          return;
+        }
+
+        // TODO: Backend API call to update user location
+        // await api.put("/user/location", {
+        //   latitude: editedData.location.lat,
+        //   longitude: editedData.location.lng
+        // }, {
+        //   headers: { Authorization: `Bearer ${token}` }
+        // });
+
+        setUserData(prev => prev ? ({
+          ...prev,
+          location: editedData.location
+        }) : null);
+        setIsEditingLocation(false);
+      } catch (err: any) {
+        console.error("Error updating location:", err);
+        setError(err.response?.data?.detail || "Failed to update location");
+      }
     }
   };
 
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
     if (editedData) {
-      setUserData(editedData);
-      setIsEditingProfile(false);
+      try {
+        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+        if (!token) {
+          router.push("/");
+          return;
+        }
+
+        // TODO: Backend API call to update user profile
+        // await api.put("/user/profile", {
+        //   name: editedData.name,
+        //   mobile: editedData.mobile
+        // }, {
+        //   headers: { Authorization: `Bearer ${token}` }
+        // });
+
+        setUserData(editedData);
+        setIsEditingProfile(false);
+      } catch (err: any) {
+        console.error("Error updating profile:", err);
+        setError(err.response?.data?.detail || "Failed to update profile");
+      }
     }
   };
 
@@ -166,8 +211,46 @@ const ProfilePage: React.FC = () => {
     setIsEditingLocation(false);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("token_type");
+    localStorage.removeItem("user");
+    router.push("/");
+  };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="bg-red-100 p-4 rounded-lg mb-4">
+            <p className="text-red-700">{error}</p>
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!userData || !editedData) {
-    return <div className="min-h-screen flex items-center justify-center">Loading current location...</div>;
+    return <div className="min-h-screen flex items-center justify-center">Loading profile...</div>;
   }
 
   return (
@@ -230,16 +313,16 @@ const ProfilePage: React.FC = () => {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Mobile</label>
                   {isEditingProfile ? (
                     <input
                       type="tel"
-                      value={editedData.phone}
-                      onChange={(e) => setEditedData({...editedData, phone: e.target.value})}
+                      value={editedData.mobile}
+                      onChange={(e) => setEditedData({...editedData, mobile: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     />
                   ) : (
-                    <p className="text-gray-900">{userData.phone}</p>
+                    <p className="text-gray-900">{userData.mobile}</p>
                   )}
                 </div>
               </div>

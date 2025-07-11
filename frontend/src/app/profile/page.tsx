@@ -16,8 +16,25 @@ import {
 } from 'lucide-react';
 
 import dynamic from 'next/dynamic';
-
 const MapSection = dynamic(() => import('./mapSection'), { ssr: false });
+
+// Simple geocoding using OpenStreetMap Nominatim API
+async function geocodeLocation(query: string): Promise<{ lat: number; lng: number; address: string } | null> {
+  try {
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+    const data = await response.json();
+    if (data && data.length > 0) {
+      return {
+        lat: parseFloat(data[0].lat),
+        lng: parseFloat(data[0].lon),
+        address: data[0].display_name
+      };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 interface UserData {
   name: string;
@@ -33,35 +50,113 @@ interface UserData {
 
 
 const ProfilePage: React.FC = () => {
-  const [userData, setUserData] = useState<UserData>({
-    name: 'Alex Johnson',
-    email: 'alex.johnson@email.com',
-    phone: '+1 (555) 123-4567',
-    tokens: 1247.5,
-    location: {
-      lat: 40.7128,
-      lng: -74.006,
-      address: 'New York, NY, USA'
-    }
-  });
-
-
+  const [userData, setUserData] = useState<UserData | null>(null);
   const [isEditingLocation, setIsEditingLocation] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [editedData, setEditedData] = useState(userData);
+  const [editedData, setEditedData] = useState<UserData | null>(null);
+
+  // Set default location to current location on mount
+  React.useEffect(() => {
+    if (!userData) {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            setUserData({
+              name: 'Alex Johnson',
+              email: 'alex.johnson@email.com',
+              phone: '+1 (555) 123-4567',
+              tokens: 1247.5,
+              location: {
+                lat,
+                lng,
+                address: 'Current Location'
+              }
+            });
+            setEditedData({
+              name: 'Alex Johnson',
+              email: 'alex.johnson@email.com',
+              phone: '+1 (555) 123-4567',
+              tokens: 1247.5,
+              location: {
+                lat,
+                lng,
+                address: 'Current Location'
+              }
+            });
+          },
+          () => {
+            // Fallback to Kochi if geolocation fails
+            setUserData({
+              name: 'Alex Johnson',
+              email: 'alex.johnson@email.com',
+              phone: '+1 (555) 123-4567',
+              tokens: 1247.5,
+              location: {
+                lat: 9.9312,
+                lng: 76.2673,
+                address: 'Kochi, Kerala, India'
+              }
+            });
+            setEditedData({
+              name: 'Alex Johnson',
+              email: 'alex.johnson@email.com',
+              phone: '+1 (555) 123-4567',
+              tokens: 1247.5,
+              location: {
+                lat: 9.9312,
+                lng: 76.2673,
+                address: 'Kochi, Kerala, India'
+              }
+            });
+          }
+        );
+      } else {
+        setUserData({
+          name: 'Alex Johnson',
+          email: 'alex.johnson@email.com',
+          phone: '+1 (555) 123-4567',
+          tokens: 1247.5,
+          location: {
+            lat: 9.9312,
+            lng: 76.2673,
+            address: 'Kochi, Kerala, India'
+          }
+        });
+        setEditedData({
+          name: 'Alex Johnson',
+          email: 'alex.johnson@email.com',
+          phone: '+1 (555) 123-4567',
+          tokens: 1247.5,
+          location: {
+            lat: 9.9312,
+            lng: 76.2673,
+            address: 'Kochi, Kerala, India'
+          }
+        });
+      }
+    }
+  }, [userData]);
+
+
 
 
   const handleSaveLocation = () => {
-    setUserData(prev => ({
-      ...prev,
-      location: editedData.location
-    }));
-    setIsEditingLocation(false);
+    if (editedData) {
+      setUserData(prev => ({
+        ...prev!,
+        location: editedData.location
+      }));
+      setIsEditingLocation(false);
+    }
   };
 
   const handleSaveProfile = () => {
-    setUserData(editedData);
-    setIsEditingProfile(false);
+    if (editedData) {
+      setUserData(editedData);
+      setIsEditingProfile(false);
+    }
   };
 
   const handleCancelEdit = () => {
@@ -70,9 +165,12 @@ const ProfilePage: React.FC = () => {
     setIsEditingLocation(false);
   };
 
+  if (!userData || !editedData) {
+    return <div className="min-h-screen flex items-center justify-center">Loading current location...</div>;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200">
@@ -95,8 +193,8 @@ const ProfilePage: React.FC = () => {
                     <Coins className="w-6 h-6 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-green-700">Available Tokens</p>
-                    <p className="text-2xl font-bold text-green-600">{userData.tokens.toLocaleString()}</p>
+                    <button className="text-lg font-medium text-green-700">View Wallet</button>
+                   
                   </div>
                 </div>
               </div>
@@ -177,10 +275,58 @@ const ProfilePage: React.FC = () => {
               </div>
             </div>
             <div className="p-6">
-              <div className="mb-4">
-                <p className="text-sm font-medium text-gray-700 mb-2">Current Address</p>
-                <p className="text-gray-900">{userData.location.address}</p>
-              </div>
+              {/* Search bar for location */}
+              {isEditingLocation && (
+                <div className="mb-4">
+                  <form
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      const result = await geocodeLocation(editedData.location.address);
+                      if (result) {
+                        setEditedData(prev => prev ? {
+                          ...prev,
+                          location: {
+                            ...prev.location,
+                            lat: result.lat,
+                            lng: result.lng,
+                            address: result.address
+                          }
+                        } : prev);
+                      }
+                    }}
+                  >
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Search for a location..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 mb-2"
+                        value={editedData.location.address}
+                        onChange={e => setEditedData(prev => prev ? {
+                          ...prev,
+                          location: {
+                            ...prev.location,
+                            address: e.target.value
+                          }
+                        } : prev)}
+                      />
+                      <button
+                        type="submit"
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg"
+                      >
+                        Search
+                      </button>
+                    </div>
+                  </form>
+                  <p className="text-xs text-gray-500">Lat: {editedData.location.lat}, Lng: {editedData.location.lng}</p>
+                </div>
+              )}
+              {!isEditingLocation && (
+                <div className="mb-4">
+                  <p className="text-sm font-medium text-gray-700 mb-2">Current Address</p>
+                  <p className="text-gray-900">{userData.location.address}</p>
+                  <p className="text-xs text-gray-500">Lat: {userData.location.lat}, Lng: {userData.location.lng}</p>
+                </div>
+              )}
               <MapSection
                 userData={userData}
                 editedData={editedData}

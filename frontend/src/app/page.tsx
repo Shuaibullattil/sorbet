@@ -149,9 +149,9 @@ const PowerShareLogin = () => {
       <div className="w-full md:w-1/2 flex items-center justify-center px-6">
         <div className="w-full max-w-md">
           <div className="flex items-center mb-6 space-x-2">
-            <div className="bg-[#F2B705] p-3 rounded-full">
-              <Zap className="text-white w-6 h-6" />
-            </div>
+            <div className="bg-green-600 p-2 rounded-lg">
+                        <Zap className="text-white w-6 h-6" />
+                      </div>
             <h1 className="text-3xl font-bold">PowerShare</h1>
           </div>
 

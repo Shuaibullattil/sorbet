@@ -33,8 +33,8 @@ interface UserData {
 
 interface MapSectionProps {
   userData: UserData;
-  editedData: UserData;
-  setEditedData: React.Dispatch<React.SetStateAction<UserData>>;
+  editedData: UserData | null;
+  setEditedData: React.Dispatch<React.SetStateAction<UserData | null>>;
   isEditingLocation: boolean;
   className?: string;
 }
@@ -95,21 +95,23 @@ const MapSection: React.FC<MapSectionProps> = ({
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <DraggableMarker
-        position={[editedData.location.lat, editedData.location.lng]}
-        isDraggable={isEditingLocation}
-        onDragEnd={(lat, lng) => {
-          setEditedData(prev => ({
-            ...prev,
-            location: {
-              ...prev.location,
-              lat,
-              lng,
-              address: `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`
-            }
-          }));
-        }}
-      />
+      {editedData && (
+        <DraggableMarker
+          position={[editedData.location.lat, editedData.location.lng]}
+          isDraggable={isEditingLocation}
+          onDragEnd={(lat, lng) => {
+            setEditedData(prev => prev ? ({
+              ...prev,
+              location: {
+                ...prev.location,
+                lat,
+                lng,
+                address: `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`
+              }
+            }) : prev);
+          }}
+        />
+      )}
     </MapContainer>
   );
 };

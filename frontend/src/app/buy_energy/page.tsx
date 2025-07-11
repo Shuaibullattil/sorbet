@@ -4,6 +4,7 @@ import { useAuthGuard } from "../lib/useAuthGuard";
 import React, { useEffect, useState } from "react";
 import api from "../lib/axios";
 import dynamic from "next/dynamic";
+import BuyEnergyModal from "./BuyEnergyModal";
 
 const MapWithMarkers = dynamic(() => import("./MapWithMarkers"), { ssr: false });
 
@@ -23,6 +24,8 @@ export default function BuyEnergyPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [buyModalOpen, setBuyModalOpen] = useState(false);
+  const [poolToBuy, setPoolToBuy] = useState<EnergyPool | null>(null);
 
   useEffect(() => {
     if (!checked) return;
@@ -54,6 +57,28 @@ export default function BuyEnergyPage() {
 
   if (!checked) return null;
 
+  const handleBuyClick = (pool: EnergyPool) => {
+    setPoolToBuy(pool);
+    setBuyModalOpen(true);
+  };
+
+  const refreshPools = () => {
+    setLoading(true);
+    setError(null);
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    api.get("/energypool/", { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => {
+        setPools(res.data as EnergyPool[]);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(
+          err.response?.data?.detail || err.response?.data?.message || err.message || "Failed to load energy pools."
+        );
+        setLoading(false);
+      });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
       <Navbar />
@@ -82,6 +107,12 @@ export default function BuyEnergyPage() {
                   <div className="flex flex-col items-end">
                     <span className="text-3xl font-extrabold text-green-700">{pool.units_for_sell}</span>
                     <span className="text-xs text-gray-400 mt-1">Units for Sale</span>
+                    <button
+                      className="mt-4 px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-semibold shadow hover:from-green-600 hover:to-green-700 transition-all duration-300"
+                      onClick={e => { e.stopPropagation(); handleBuyClick(pool); }}
+                    >
+                      Buy
+                    </button>
                   </div>
                 </li>
               ))}
@@ -96,6 +127,7 @@ export default function BuyEnergyPage() {
           </div>
         </div>
       </div>
+      <BuyEnergyModal open={buyModalOpen} onClose={() => setBuyModalOpen(false)} pool={poolToBuy} onSuccess={refreshPools} />
     </div>
   );
 }

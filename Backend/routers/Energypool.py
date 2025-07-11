@@ -13,6 +13,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 Grid_Collection = db["user_grid"]
 collection = db["users"]
+Transaction_Collection = db["transactions"]
 
 router = APIRouter(prefix="/energypool", tags=["energypool"])
 
@@ -64,4 +65,66 @@ async def get_available_units(token: str = Depends(oauth2_scheme)):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Authorization failed: {str(e)}",
             headers={"WWW-Authenticate": "Bearer"},
+        )
+
+@router.post("/buy")
+async def buy_energy(
+    grid_id: str = Body(...),
+    units: int = Body(...),
+    token: str = Depends(oauth2_scheme)
+):
+    try:
+        payload = decode_token(token)
+        email = payload.get("sub")
+        if not email:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication credentials",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        buyer = collection.find_one({"email": email}, {"_id": 1})
+        if not buyer:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        grid = Grid_Collection.find_one({"_id": ObjectId(grid_id)})
+        if not grid:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Grid not found",
+            )
+        if grid.get("units_for_sell", 0) < units:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Not enough units available for sale",
+            )
+        # Decrement units_for_sell
+        Grid_Collection.update_one(
+            {"_id": ObjectId(grid_id)},
+            {"$inc": {"units_for_sell": -units}}
+        )
+        # Insert transaction
+        transaction = {
+            "buyer": buyer["_id"],
+            "grid": ObjectId(grid_id),
+            "units": units,
+            "time": datetime.utcnow(),
+            "status": "completed"
+        }
+        Transaction_Collection.insert_one(transaction)
+        return {
+            "message": "Purchase successful",
+            "transaction": {
+                "buyer": str(buyer["_id"]),
+                "grid": grid_id,
+                "units": units,
+                "status": "completed"
+            }
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Purchase failed: {str(e)}"
         )

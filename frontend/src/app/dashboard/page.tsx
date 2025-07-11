@@ -222,7 +222,7 @@ const PowerShareDashboard: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="col-span-2 flex gap-4">
             <button 
-              onClick={() => {}}
+              onClick={() => {router.push('/buy_energy')}}
               className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white py-4 px-8 rounded-xl font-semibold text-lg hover:from-green-600 hover:to-green-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
             >
               Buy Energy

@@ -40,6 +40,7 @@ async def insert_new_grid(grid: UserGrid,token: str = Depends(oauth2_scheme)):
         )
     userid = collection.find_one({"email": email}, {"_id": 1, "name": 0, "email": 0, "mobile": 0, "password": 0})
     new_grid = {
+        "grid name": grid.grid_name,
         "user": ObjectId(userid["_id"]),
         "location": {
             "latitude": grid.location.latitude,

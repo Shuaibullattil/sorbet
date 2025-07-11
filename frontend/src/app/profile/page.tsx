@@ -18,6 +18,7 @@ import {
 
 import dynamic from 'next/dynamic';
 const MapSection = dynamic(() => import('./mapSection'), { ssr: false });
+import { useAuthGuard } from "../lib/useAuthGuard";
 
 // Simple geocoding using OpenStreetMap Nominatim API
 async function geocodeLocation(query: string): Promise<{ lat: number; lng: number; address: string } | null> {
@@ -50,7 +51,8 @@ interface UserData {
 }
 
 
-const ProfilePage: React.FC = () => {
+export default function ProfilePage() {
+  const checked = useAuthGuard();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [isEditingLocation, setIsEditingLocation] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -165,6 +167,8 @@ const ProfilePage: React.FC = () => {
     setIsEditingProfile(false);
     setIsEditingLocation(false);
   };
+
+  if (!checked) return null;
 
   if (!userData || !editedData) {
     return <div className="min-h-screen flex items-center justify-center">Loading current location...</div>;
@@ -367,5 +371,3 @@ const ProfilePage: React.FC = () => {
     </div>
   );
 };
-
-export default ProfilePage;

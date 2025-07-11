@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { Navbar } from "../components/Powersharenavbar";
 import { useRouter } from "next/navigation";
+import { useAuthGuard } from "../lib/useAuthGuard";
 const UserGridMap = dynamic(() => import("./UserGridMap"), { ssr: false });
 import api from "../lib/axios";
 import { Dialog, Transition } from "@headlessui/react";
@@ -28,6 +29,7 @@ interface ApiErrorResponse {
 }
 
 export default function MyGridPage() {
+  const checked = useAuthGuard();
   const router = useRouter();
   const [gridData, setGridData] = useState<GridData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -248,6 +250,8 @@ export default function MyGridPage() {
     setCreateError(null);
     setGeoError(null);
   };
+
+  if (!checked) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">

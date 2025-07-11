@@ -22,6 +22,8 @@ import dynamic from 'next/dynamic';
 const MapSection = dynamic(() => import('./mapSection'), { ssr: false });
 import { useAuthGuard } from "../lib/useAuthGuard";
 
+const router = useRouter();
+
 // Simple geocoding using OpenStreetMap Nominatim API
 async function geocodeLocation(query: string): Promise<{ lat: number; lng: number; address: string } | null> {
   try {

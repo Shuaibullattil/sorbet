@@ -8,7 +8,6 @@ import Navbar from "../components/Powersharenavbar";
 import SellEnergyModal from "../components/SellEnergyModal";
 import api from "../lib/axios";
 import { useAuthGuard } from "../lib/useAuthGuard";
-import Navbar from "../components/Powersharenavbar";
 
 // Type definitions
 interface EnergyData {

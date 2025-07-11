@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import api from "./lib/axios";
 import {
   Eye,
   EyeOff,
@@ -12,9 +13,25 @@ import {
   Zap,
 } from "lucide-react";
 
+// Type definitions for API responses
+interface LoginResponse {
+  token: string;
+  token_type: string;
+}
+
+interface RegisterResponse {
+  msg: string;
+  token: string;
+  user: {
+    name: string;
+    email: string;
+  };
+}
+
 const PowerShareLogin = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [isShowPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     mobile: "",
@@ -34,7 +51,8 @@ const PowerShareLogin = () => {
     setError(null);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    // Client-side validation
     if (!formData.email) {
       setError("Email is required");
       return;
@@ -51,9 +69,66 @@ const PowerShareLogin = () => {
       setError("Name is required");
       return;
     }
+    if (!isLogin && !formData.mobile.trim()) {
+      setError("Mobile number is required");
+      return;
+    }
 
     setError(null);
-    router.push("/dashboard");
+    setIsLoading(true);
+
+    try {
+      if (isLogin) {
+        // Login API call
+        const response = await api.post<LoginResponse>("/user/login", {
+          email: formData.email,
+          password: formData.password,
+        });
+
+        if (response.data.token) {
+          // Store token in localStorage
+          localStorage.setItem("token", response.data.token);
+          localStorage.setItem("token_type", response.data.token_type);
+          
+          // Redirect to dashboard
+          router.push("/dashboard");
+        }
+      } else {
+        // Register API call
+        const response = await api.post<RegisterResponse>("/user/register", {
+          name: formData.name,
+          email: formData.email,
+          mobile: formData.mobile,
+          password: formData.password,
+        });
+
+        if (response.data.token) {
+          // Store token in localStorage
+          localStorage.setItem("token", response.data.token);
+          
+          // Store user info if needed
+          if (response.data.user) {
+            localStorage.setItem("user", JSON.stringify(response.data.user));
+          }
+          
+          // Redirect to dashboard
+          router.push("/dashboard");
+        }
+      }
+    } catch (error: any) {
+      // Handle API errors
+      if (error.response?.data?.message) {
+        setError(error.response.data.message);
+      } else if (error.response?.data?.detail) {
+        setError(error.response.data.detail);
+      } else if (error.message) {
+        setError(error.message);
+      } else {
+        setError(isLogin ? "Login failed. Please try again." : "Registration failed. Please try again.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const toggleAuthMode = () => {
@@ -101,6 +176,7 @@ const PowerShareLogin = () => {
                     onChange={handleInputChange}
                     className="pl-10 pr-4 py-2 w-full border italic border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F2B705] outline-none"
                     placeholder="Enter your name"
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -117,24 +193,28 @@ const PowerShareLogin = () => {
                   onChange={handleInputChange}
                   className="pl-10 pr-4 py-2 w-full border italic border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F2B705] outline-none"
                   placeholder="Enter your email address"
+                  disabled={isLoading}
                 />
               </div>
             </div>
-            {!isLogin &&
-             (<div>
-              <label className="block mb-1 text-sm font-medium">Mobile Number:</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  name="mobile"
-                  type="mobile"
-                  value={formData.mobile}
-                  onChange={handleInputChange}
-                  className="pl-10 pr-4 py-2 w-full border italic border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F2B705] outline-none"
-                  placeholder="Enter your mobile number"
-                />
+            
+            {!isLogin && (
+              <div>
+                <label className="block mb-1 text-sm font-medium">Mobile Number:</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    name="mobile"
+                    type="tel"
+                    value={formData.mobile}
+                    onChange={handleInputChange}
+                    className="pl-10 pr-4 py-2 w-full border italic border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F2B705] outline-none"
+                    placeholder="Enter your mobile number"
+                    disabled={isLoading}
+                  />
+                </div>
               </div>
-            </div>)}
+            )}
 
             <div>
               <label className="block mb-1 text-sm font-medium">Password:</label>
@@ -147,11 +227,13 @@ const PowerShareLogin = () => {
                   onChange={handleInputChange}
                   className="pl-10 pr-12 py-2 w-full border italic border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F2B705] outline-none"
                   placeholder="Enter your password"
+                  disabled={isLoading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!isShowPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  disabled={isLoading}
                 >
                   {isShowPassword ? <EyeOff /> : <Eye />}
                 </button>
@@ -170,6 +252,7 @@ const PowerShareLogin = () => {
                     onChange={handleInputChange}
                     className="pl-10 pr-4 py-2 w-full border italic border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F2B705] outline-none"
                     placeholder="Re-enter your password"
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -181,10 +264,16 @@ const PowerShareLogin = () => {
 
             <button
               onClick={handleSubmit}
-              className="w-full py-2 bg-[#1F7A8C] text-white rounded-lg hover:bg-[#18606F] transition font-medium flex justify-center items-center space-x-2"
+              disabled={isLoading}
+              className="w-full py-2 bg-[#1F7A8C] text-white rounded-lg hover:bg-[#18606F] transition font-medium flex justify-center items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <span>{isLogin ? "Sign In" : "Create Account"}</span>
-              <ArrowRight className="w-4 h-4" />
+              <span>
+                {isLoading 
+                  ? (isLogin ? "Signing In..." : "Creating Account...") 
+                  : (isLogin ? "Sign In" : "Create Account")
+                }
+              </span>
+              {!isLoading && <ArrowRight className="w-4 h-4" />}
             </button>
           </div>
 
@@ -193,6 +282,7 @@ const PowerShareLogin = () => {
             <button
               onClick={toggleAuthMode}
               className="ml-1 font-medium text-[#F2B705] hover:text-[#E89A00]"
+              disabled={isLoading}
             >
               {isLogin ? "Sign up" : "Sign in"}
             </button>
@@ -200,11 +290,11 @@ const PowerShareLogin = () => {
         </div>
       </div>
 
-     
+      {/* Right side: Branding */}
       <div className="hidden md:flex w-1/2 items-center justify-center bg-[#FFEABF]">
         <div className="max-w-xs text-center px-6">
           <p className="text-lg italic text-[#333] mb-4">
-            “Lets share power.”
+            "Lets share power."
           </p>
           <img alt="power share"></img>
         </div>

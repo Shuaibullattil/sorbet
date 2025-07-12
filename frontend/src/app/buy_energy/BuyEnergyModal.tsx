@@ -2,6 +2,9 @@
 import React, { useState } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import api from "../lib/axios";
+import { useWallet } from '../lib/WalletContext';
+import { ethers } from 'ethers';
+import PowerShareAbi from '../lib/PowerShareAbi.json';
 
 interface EnergyPool {
   grid_id: string;
@@ -19,12 +22,16 @@ interface BuyEnergyModalProps {
   onSuccess?: () => void;
 }
 
+const TOKEN_DECIMALS = 18;
+const TOKEN_SYMBOL = 'PSET';
+
 const BuyEnergyModal: React.FC<BuyEnergyModalProps> = ({ open, onClose, pool, onSuccess }) => {
   const [units, setUnits] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [showAnimation, setShowAnimation] = useState(false);
+  const { address, isConnected } = useWallet();
 
   React.useEffect(() => {
     if (open) {
@@ -44,8 +51,27 @@ const BuyEnergyModal: React.FC<BuyEnergyModalProps> = ({ open, onClose, pool, on
     setError(null);
     setSuccessMsg(null);
     setShowAnimation(false);
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    if (!isConnected || !address) {
+      setError('Please connect your wallet.');
+      setLoading(false);
+      return;
+    }
     try {
+      // 1. Transfer tokens to seller (pool.user is assumed to be wallet address)
+      const provider = new ethers.BrowserProvider((window as any).ethereum);
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(
+        process.env.NEXT_PUBLIC_CONTRACT_ADDRESS!,
+        PowerShareAbi,
+        signer
+      );
+      // Calculate token amount (1 unit = 1 token)
+      const tokenAmount = ethers.parseUnits(units.toString(), TOKEN_DECIMALS);
+      // Transfer tokens to seller
+      const tx = await contract.transfer(pool.user, tokenAmount);
+      await tx.wait();
+      // 2. Call backend API to record transaction
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
       const res = await api.post(
         "/energypool/buy",
         { grid_id: pool.grid_id, units },
@@ -60,9 +86,7 @@ const BuyEnergyModal: React.FC<BuyEnergyModalProps> = ({ open, onClose, pool, on
         if (onSuccess) onSuccess();
       }, 2000);
     } catch (err: any) {
-      setError(
-        err.response?.data?.detail || err.response?.data?.message || err.message || "Failed to buy energy units."
-      );
+      setError(err.message || "Failed to buy energy units.");
       setLoading(false);
     }
   };

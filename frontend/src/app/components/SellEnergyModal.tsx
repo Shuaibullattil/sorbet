@@ -141,14 +141,25 @@ const SellEnergyModal: React.FC<SellEnergyModalProps> = ({ open, onClose, onSucc
     }
     
     try {
+      // Placeholder: Mint tokens to user wallet if contract supports it
+      // const { address, isConnected } = useWallet();
+      // if (isConnected && address) {
+      //   const provider = new ethers.BrowserProvider((window as any).ethereum);
+      //   const signer = await provider.getSigner();
+      //   const contract = new ethers.Contract(
+      //     process.env.NEXT_PUBLIC_CONTRACT_ADDRESS!,
+      //     PowerShareAbi,
+      //     signer
+      //   );
+      //   const tx = await contract.mint(address, ethers.parseUnits(units.toString(), 18));
+      //   await tx.wait();
+      // }
       const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-      
       if (!token) {
         setError("Authentication token not found. Please log in again.");
         setLoading(false);
         return;
       }
-      
       const res = await api.post(
         "/grid/sell_units",
         { units },

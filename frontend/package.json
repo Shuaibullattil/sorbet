@@ -10,14 +10,17 @@
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",
+    "@metamask/detect-provider": "^2.0.0",
     "axios": "^1.10.0",
+    "ethers": "^6.15.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.525.0",
     "next": "15.3.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-leaflet": "^5.0.0",
-    "recharts": "^3.1.0"
+    "recharts": "^3.1.0",
+    "web3modal": "^1.9.12"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

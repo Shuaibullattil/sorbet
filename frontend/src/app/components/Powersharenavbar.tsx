@@ -4,10 +4,12 @@
 import React, { useState } from 'react';
 import { Bell, User, Wallet, Zap, History, LayoutDashboard, Menu, X, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation'
+import { useWallet } from '../lib/WalletContext';
 
 const Sidebar: React.FC = () => {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const { address, isConnected, connectWallet, disconnectWallet, error } = useWallet();
 
   const handleNavigation = (path: string): void => {
     console.log(`Navigating to: ${path}`);
@@ -81,6 +83,29 @@ const Sidebar: React.FC = () => {
               )}
             </button>
           ))}
+          {/* Wallet connect section */}
+          <div className="mt-6 p-3 bg-green-100 rounded-lg flex flex-col items-start space-y-2 border border-green-200">
+            {isConnected ? (
+              <>
+                <span className="text-green-700 text-xs font-semibold">Wallet Connected</span>
+                <span className="text-xs break-all">{address}</span>
+                <button
+                  onClick={disconnectWallet}
+                  className="mt-1 px-2 py-1 text-xs bg-red-200 text-red-700 rounded hover:bg-red-300"
+                >
+                  Disconnect
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={connectWallet}
+                className="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-semibold"
+              >
+                Connect Wallet
+              </button>
+            )}
+            {error && <span className="text-xs text-red-600">{error}</span>}
+          </div>
         </nav>
 
         {/* Logout button at bottom */}

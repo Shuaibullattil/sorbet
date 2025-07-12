@@ -6,6 +6,7 @@ class UserModel(BaseModel):
     email : EmailStr
     mobile : str
     password : str
+    walletAddress: str | None = None
 
 class UserLogin(BaseModel):
     email : EmailStr

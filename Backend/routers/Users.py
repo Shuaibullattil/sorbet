@@ -1,5 +1,5 @@
 import os
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Body
 from database import db
 from bson import ObjectId
 from models import UserModel, UserLogin
@@ -128,6 +128,37 @@ async def check_token_valid(token: str = Depends(oauth2_scheme)):
         return {"valid": True, "message": "Token is valid."}
     except Exception as e:
         return {"valid": False, "message": str(e)}
+
+@router.post("/wallet")
+async def update_wallet_address(
+    wallet_data: dict = Body(...),
+    token: str = Depends(oauth2_scheme)
+):
+    payload = decode_token(token)
+    email = payload.get("sub")
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    wallet_address = wallet_data.get("walletAddress")
+    if not wallet_address:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="walletAddress is required"
+        )
+    result = collection.update_one(
+        {"email": email},
+        {"$set": {"walletAddress": wallet_address}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    user = collection.find_one({"email": email})
+    return convert_id(user)
 
 
 

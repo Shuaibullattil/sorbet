@@ -7,9 +7,13 @@ from models import UserModel, UserLogin, Location, UserGrid
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import jwt, JWTError,ExpiredSignatureError
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+import pytz
+
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+IST = pytz.timezone('Asia/Kolkata')
 
 Grid_Collection = db["user_grid"]
 collection = db["users"]
@@ -110,7 +114,7 @@ async def buy_energy(
             "buyer": buyer["_id"],
             "grid": ObjectId(grid_id),
             "units": units,
-            "time": datetime.utcnow(),
+            "time": datetime.now(IST),
             "status": "completed"
         }
         Transaction_Collection.insert_one(transaction)
@@ -160,12 +164,19 @@ async def transaction_history(token: str = Depends(oauth2_scheme)):
         for tx in tx_buyer:
             grid = Grid_Collection.find_one({"_id": tx["grid"]})
             grid_name = grid.get("grid name") if grid else None
+
+            tx_time = tx.get("time")
+            if tx_time and tx_time.tzinfo is None:
+                tx_time = tx_time.replace(tzinfo=timezone.utc)
+            tx_time_ist = tx_time.astimezone(IST)
+            time_str = tx_time_ist.isoformat()
+
             result.append({
                 "transaction_id": str(tx["_id"]),
                 "user_name": user.get("name"),
                 "grid_name": grid_name,
                 "units": tx.get("units", 0),
-                "time": tx.get("time"),
+                "time": time_str,
                 "status": tx.get("status"),
                 "role": "bought"
             })

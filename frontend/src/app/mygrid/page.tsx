@@ -9,6 +9,7 @@ const UserGridMap = dynamic(() => import("./UserGridMap"), { ssr: false });
 import api from "../lib/axios";
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
+import { Search, MapPin} from "lucide-react";
 
 interface GridData {
   _id: string;
@@ -17,6 +18,12 @@ interface GridData {
   location: { latitude: number; longitude: number };
   units: number;
   available: boolean;
+}
+
+interface GridLocation {
+  lat: number;
+  lng: number;
+  address?: string;
 }
 
 interface UpdateUnitsResponse {
@@ -53,7 +60,57 @@ export default function MyGridPage() {
   const [createError, setCreateError] = useState<string | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
   const [hasGrid, setHasGrid] = useState<boolean | null>(null);
-  const [geoError, setGeoError] = useState<string | null>(null); // Add for geolocation errors
+  const [geoError, setGeoError] = useState<string | null>(null);
+  
+  // Location editing states
+  const [isEditingLocation, setIsEditingLocation] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchLocation, setSearchLocation] = useState<GridLocation | null>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+
+  // Geocoding function for search
+  const geocodeLocation = async (query: string): Promise<GridLocation | null> => {
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+      const data = await response.json();
+      if (data && data.length > 0) {
+        return {
+          lat: parseFloat(data[0].lat),
+          lng: parseFloat(data[0].lon),
+          address: data[0].display_name
+        };
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
+  // Handle location search
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    
+    setSearchLoading(true);
+    const location = await geocodeLocation(searchQuery);
+    if (location) {
+      setSearchLocation(location);
+      setCreateForm(prev => ({
+        ...prev,
+        latitude: location.lat,
+        longitude: location.lng,
+      }));
+    }
+    setSearchLoading(false);
+  };
+
+  // Handle location change from map
+  const handleLocationChange = (location: GridLocation) => {
+    setCreateForm(prev => ({
+      ...prev,
+      latitude: location.lat,
+      longitude: location.lng,
+    }));
+  };
 
   // Helper to get current location
   const getCurrentLocation = () => {
@@ -387,7 +444,10 @@ export default function MyGridPage() {
               
               <div className="h-80 rounded-xl overflow-hidden border-2 border-green-100">
                 {gridData?.location ? (
-                  <UserGridMap position={{ lat: gridData.location.latitude, lng: gridData.location.longitude }} />
+                  <UserGridMap 
+                    position={{ lat: gridData.location.latitude, lng: gridData.location.longitude }} 
+                    isEditing={false}
+                  />
                 ) : (
                   <div className="flex items-center justify-center h-full text-gray-400 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border-2 border-dashed border-green-200">
                     <div className="text-center">
@@ -518,6 +578,45 @@ export default function MyGridPage() {
 
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">Location</label>
+                      
+                      {/* Search Location */}
+                      <div className="mb-4">
+                        <div className="flex gap-2 mb-2">
+                          <div className="flex-1 relative">
+                            <input
+                              type="text"
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                              className="w-full border-2 border-gray-300 rounded-lg pl-10 pr-4 py-3 focus:border-green-500 focus:outline-none transition-colors"
+                              placeholder="Search for a location..."
+                            />
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleSearch}
+                            disabled={searchLoading || !searchQuery.trim()}
+                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {searchLoading ? (
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            ) : (
+                              "Search"
+                            )}
+                          </button>
+                        </div>
+                        {searchLocation && (
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                            <div className="flex items-center gap-2">
+                              <MapPin className="w-4 h-4 text-green-600" />
+                              <span className="text-sm text-green-800 font-medium">{searchLocation.address}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Manual Coordinates */}
                       <div className="grid grid-cols-2 gap-4 mb-3">
                         <div>
                           <input
@@ -542,35 +641,43 @@ export default function MyGridPage() {
                           />
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={getCurrentLocation}
-                        disabled={locationLoading}
-                        className="w-full bg-blue-50 text-blue-700 border-2 border-blue-200 px-4 py-3 rounded-lg font-semibold hover:bg-blue-100 transition-all duration-300 disabled:opacity-50"
-                      >
-                        {locationLoading ? (
-                          <span className="flex items-center justify-center gap-2">
-                            <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                            Getting Location...
-                          </span>
-                        ) : (
-                          <span className="flex items-center justify-center gap-2">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                            Use My Current Location
-                          </span>
-                        )}
-                      </button>
+                      
+                      {/* Location Buttons */}
+                      <div className="mb-3">
+                        <button
+                          type="button"
+                          onClick={getCurrentLocation}
+                          disabled={locationLoading}
+                          className="w-full bg-blue-50 text-blue-700 border-2 border-blue-200 px-4 py-3 rounded-lg font-semibold hover:bg-blue-100 transition-all duration-300 disabled:opacity-50"
+                        >
+                          {locationLoading ? (
+                            <span className="flex items-center justify-center gap-2">
+                              <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                              Getting Location...
+                            </span>
+                          ) : (
+                            <span className="flex items-center justify-center gap-2">
+                              <MapPin className="w-4 h-4" />
+                              Use Current Location
+                            </span>
+                          )}
+                        </button>
+                      </div>
+                      
                       {geoError && (
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-2 mt-2">
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-2 mb-3">
                           <p className="text-red-700 text-xs">{geoError}</p>
                         </div>
                       )}
+                      
                       {/* Map Preview for Location Selection */}
                       <div className="mt-4 h-48 rounded-xl overflow-hidden border-2 border-green-100">
-                        <UserGridMap position={{ lat: createForm.latitude, lng: createForm.longitude }} />
+                        <UserGridMap 
+                          position={{ lat: createForm.latitude, lng: createForm.longitude }} 
+                          isEditing={isEditingLocation}
+                          onLocationChange={handleLocationChange}
+                          searchLocation={searchLocation}
+                        />
                       </div>
                     </div>
 

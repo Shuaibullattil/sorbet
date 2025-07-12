@@ -9,6 +9,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import jwt, JWTError,ExpiredSignatureError
 from datetime import datetime, timedelta, timezone
 import pytz
+import calendar
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -210,3 +211,64 @@ async def transaction_history(token: str = Depends(oauth2_scheme)):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Failed to fetch transaction history: {str(e)}"
         )
+        
+@router.get("/monthly_energy_summary")
+async def monthly_energy_summary(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = decode_token(token)
+        email = payload.get("sub")
+        if not email:
+            raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+
+        user = collection.find_one({"email": email}, {"_id": 1})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        user_id = user["_id"]
+
+        # Find all grids owned by this user
+        user_grids = list(Grid_Collection.find({"user": user_id}))
+        user_grid_ids = [g["_id"] for g in user_grids]
+
+        # Fetch all transactions where user is buyer or grid belongs to user (seller)
+        transactions = list(Transaction_Collection.find({
+            "$or": [
+                {"buyer": user_id},
+                {"grid": {"$in": user_grid_ids}}
+            ]
+        }))
+
+        # Prepare month-wise data
+        monthly_data = {month: {"bought": 0, "sold": 0} for month in range(1, 13)}
+
+        for tx in transactions:
+            tx_time = tx.get("time")
+            if not tx_time:
+                continue
+
+            # Convert UTC datetime to IST
+            tx_time_ist = tx_time.astimezone(datetime.now().astimezone().tzinfo)  # Converts to local system tz
+            month = tx_time_ist.month
+
+            if tx.get("buyer") == user_id:
+                # User bought
+                monthly_data[month]["bought"] += tx.get("units", 0)
+
+            elif tx.get("grid") in user_grid_ids and tx.get("buyer") != user_id:
+                # User sold (grid was seller)
+                monthly_data[month]["sold"] += tx.get("units", 0)
+
+        # Prepare final output list
+        result = []
+        for month_num in range(1, 13):
+            month_name = calendar.month_abbr[month_num]
+            result.append({
+                "month": month_name,
+                "bought": monthly_data[month_num]["bought"],
+                "sold": monthly_data[month_num]["sold"]
+            })
+
+        return result
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch monthly summary: {str(e)}")

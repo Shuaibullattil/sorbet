@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import api from "../lib/axios";
 import dynamic from "next/dynamic";
 import BuyEnergyModal from "./BuyEnergyModal";
+import { MapPin } from "lucide-react";
 
 const MapWithMarkers = dynamic(() => import("./MapWithMarkers"), { ssr: false });
 
@@ -15,6 +16,20 @@ interface EnergyPool {
   units_for_sell: number;
   user: string;
   user_name: string;
+}
+
+// Haversine formula to calculate distance between two lat/lng points in km
+function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371; // Radius of the earth in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const d = R * c; // Distance in km
+  return d;
 }
 
 export default function BuyEnergyPage() {
@@ -93,29 +108,58 @@ export default function BuyEnergyPage() {
           ) : pools.length === 0 ? (
             <div className="text-gray-500">No energy pools available for purchase.</div>
           ) : (
-            <ul className="space-y-3">
-              {pools.map(pool => (
-                <li
-                  key={pool.grid_id}
-                  className={`flex items-center justify-between p-6 rounded-2xl border-2 cursor-pointer transition-all duration-200 shadow-md hover:shadow-lg ${selected === pool.grid_id ? "border-green-500 bg-green-50" : "border-green-100 bg-white"}`}
-                  onClick={() => setSelected(pool.grid_id)}
-                >
-                  <div className="flex flex-col">
-                    <span className="text-2xl font-extrabold text-green-800 leading-tight">{pool.grid_name}</span>
-                    <span className="text-sm text-gray-500 mt-1">by {pool.user_name}</span>
-                  </div>
-                  <div className="flex flex-col items-end">
-                    <span className="text-3xl font-extrabold text-green-700">{pool.units_for_sell}</span>
-                    <span className="text-xs text-gray-400 mt-1">Units for Sale</span>
-                    <button
-                      className="mt-4 px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-semibold shadow hover:from-green-600 hover:to-green-700 transition-all duration-300"
-                      onClick={e => { e.stopPropagation(); handleBuyClick(pool); }}
-                    >
-                      Buy
-                    </button>
-                  </div>
-                </li>
-              ))}
+            <ul className="space-y-4">
+              {(() => {
+                // Calculate distances and sort pools
+                const poolsWithDistance = pools.map(pool => {
+                  let distance = null;
+                  if (userLocation) {
+                    distance = getDistanceFromLatLonInKm(
+                      userLocation[0],
+                      userLocation[1],
+                      pool.location.latitude,
+                      pool.location.longitude
+                    );
+                  }
+                  return { ...pool, distance };
+                });
+                poolsWithDistance.sort((a, b) => {
+                  if (a.distance === null) return 1;
+                  if (b.distance === null) return -1;
+                  return a.distance - b.distance;
+                });
+                return poolsWithDistance.map(pool => (
+                  <li
+                    key={pool.grid_id}
+                    className={`flex items-center justify-between p-6 rounded-2xl border-2 cursor-pointer transition-all duration-200 shadow-md hover:shadow-lg bg-white hover:bg-green-50 ${selected === pool.grid_id ? "border-green-500 ring-2 ring-green-200" : "border-green-100"}`}
+                    onClick={() => setSelected(pool.grid_id)}
+                  >
+                    <div className="flex flex-col gap-1">
+                      <span className="text-xl font-bold text-green-800 leading-tight flex items-center gap-2">
+                        <MapPin className="w-5 h-5 text-green-500" />
+                        {pool.grid_name}
+                      </span>
+                      <span className="text-sm text-gray-500">by {pool.user_name}</span>
+                      {pool.distance !== null && (
+                        <span className="flex items-center gap-1 text-xs text-green-700 mt-1 font-medium">
+                          <MapPin className="w-4 h-4 text-green-400" />
+                          {pool.distance.toFixed(2)} km away
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                      <span className="text-2xl font-extrabold text-green-700">{pool.units_for_sell}</span>
+                      <span className="text-xs text-gray-400">Units for Sale</span>
+                      <button
+                        className="mt-2 px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-semibold shadow hover:from-green-600 hover:to-green-700 transition-all duration-300"
+                        onClick={e => { e.stopPropagation(); handleBuyClick(pool); }}
+                      >
+                        Buy
+                      </button>
+                    </div>
+                  </li>
+                ));
+              })()}
             </ul>
           )}
         </div>

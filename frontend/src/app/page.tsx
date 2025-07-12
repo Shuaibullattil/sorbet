@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "./lib/axios";
+import Image from "next/image";
 import {
   Eye,
   EyeOff,
@@ -11,6 +12,10 @@ import {
   User,
   ArrowRight,
   Zap,
+  Sun,
+  Battery,
+  Users,
+  Leaf,
 } from "lucide-react";
 
 // Type definitions for API responses
@@ -140,54 +145,80 @@ const PowerShareLogin = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-[#FDF6EC] text-[#2C2C2C]">
+    <div className="min-h-screen flex bg-gradient-to-br from-green-100 via-emerald-100 to-green-200 text-[#1B3C2E]">
       {/* Left side: Form */}
-      <div className="w-full md:w-1/2 flex items-center justify-center px-6">
-        <div className="w-full max-w-md">
-          <div className="flex items-center mb-6 space-x-2">
-            <div className="bg-green-600 p-2 rounded-lg">
-                        <Zap className="text-white w-6 h-6" />
-                      </div>
-            <h1 className="text-3xl font-bold">PowerShare</h1>
+      <div className="w-full md:w-1/2 flex items-center justify-center px-6 py-8">
+        <div className="w-full max-w-md bg-white/80 rounded-2xl shadow-xl p-8 backdrop-blur-md">
+          <div className="flex items-center mb-8 space-x-3 animate-fade-in">
+            <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-3 rounded-xl shadow-lg">
+              <Zap className="text-white w-7 h-7" />
+            </div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+              PowerShare
+            </h1>
           </div>
 
-          <h2 className="text-2xl font-semibold mb-1">
+          <h2 className="text-3xl font-bold mb-2 animate-slide-up">
             {isLogin ? "Welcome Back" : "Join the Solar Movement"}
           </h2>
-          <p className="mb-6 text-sm text-[#555]">
+          <p className="mb-8 text-lg text-[#555] leading-relaxed animate-slide-up-delay">
             {isLogin
-              ? "Log in to access community-powered EV charging"
-              : "Create an account to start sharing your energy"}
+              ? "Log in to access community-powered EV charging and renewable energy sharing"
+              : "Create an account to start sharing your energy and earning from your solar panels"}
           </p>
+
+          {/* Feature highlights for registration */}
+          {!isLogin && (
+            <div className="mb-6 p-4 bg-white/50 rounded-xl border border-green-200 animate-fade-in">
+              <div className="flex items-center space-x-2 mb-3">
+                <Sun className="w-5 h-5 text-yellow-500" />
+                <span className="font-semibold text-green-700">Why Join PowerShare?</span>
+              </div>
+              <div className="space-y-2 text-sm text-gray-600">
+                <div className="flex items-center space-x-2">
+                  <Battery className="w-4 h-4 text-green-500" />
+                  <span>Earn money from your excess solar energy</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Users className="w-4 h-4 text-blue-500" />
+                  <span>Join a community of energy producers</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Leaf className="w-4 h-4 text-emerald-500" />
+                  <span>Contribute to a sustainable future</span>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-4">
             {!isLogin && (
-              <div>
-                <label className="block mb-1 text-sm font-medium">Name:</label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <div className="animate-slide-up-delay-2">
+                <label className="block mb-2 text-sm font-semibold text-gray-700">Full Name</label>
+                <div className="relative group">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-600 transition-colors" />
                   <input
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="pl-10 pr-4 py-2 w-full border italic border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F2B705] outline-none"
-                    placeholder="Enter your name"
+                    className="pl-10 pr-4 py-3 w-full border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all duration-200 bg-white/80 backdrop-blur-sm"
+                    placeholder="Enter your full name"
                     disabled={isLoading}
                   />
                 </div>
               </div>
             )}
 
-            <div>
-              <label className="block mb-1 text-sm font-medium">Email:</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <div className="animate-slide-up-delay-3">
+              <label className="block mb-2 text-sm font-semibold text-gray-700">Email Address</label>
+              <div className="relative group">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-600 transition-colors" />
                 <input
                   name="email"
                   type="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="pl-10 pr-4 py-2 w-full border italic border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F2B705] outline-none"
+                  className="pl-10 pr-4 py-3 w-full border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all duration-200 bg-white/80 backdrop-blur-sm"
                   placeholder="Enter your email address"
                   disabled={isLoading}
                 />
@@ -195,16 +226,16 @@ const PowerShareLogin = () => {
             </div>
             
             {!isLogin && (
-              <div>
-                <label className="block mb-1 text-sm font-medium">Mobile Number:</label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <div className="animate-slide-up-delay-4">
+                <label className="block mb-2 text-sm font-semibold text-gray-700">Mobile Number</label>
+                <div className="relative group">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-600 transition-colors" />
                   <input
                     name="mobile"
                     type="tel"
                     value={formData.mobile}
                     onChange={handleInputChange}
-                    className="pl-10 pr-4 py-2 w-full border italic border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F2B705] outline-none"
+                    className="pl-10 pr-4 py-3 w-full border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all duration-200 bg-white/80 backdrop-blur-sm"
                     placeholder="Enter your mobile number"
                     disabled={isLoading}
                   />
@@ -212,23 +243,23 @@ const PowerShareLogin = () => {
               </div>
             )}
 
-            <div>
-              <label className="block mb-1 text-sm font-medium">Password:</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <div className="animate-slide-up-delay-5">
+              <label className="block mb-2 text-sm font-semibold text-gray-700">Password</label>
+              <div className="relative group">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-600 transition-colors" />
                 <input
                   name="password"
                   type={isShowPassword ? "text" : "password"}
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="pl-10 pr-12 py-2 w-full border italic border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F2B705] outline-none"
+                  className="pl-10 pr-12 py-3 w-full border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all duration-200 bg-white/80 backdrop-blur-sm"
                   placeholder="Enter your password"
                   disabled={isLoading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!isShowPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                   disabled={isLoading}
                 >
                   {isShowPassword ? <EyeOff /> : <Eye />}
@@ -237,16 +268,16 @@ const PowerShareLogin = () => {
             </div>
 
             {!isLogin && (
-              <div>
-                <label className="block mb-1 text-sm font-medium">Confirm Password:</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <div className="animate-slide-up-delay-6">
+                <label className="block mb-2 text-sm font-semibold text-gray-700">Confirm Password</label>
+                <div className="relative group">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-600 transition-colors" />
                   <input
                     name="confirmPassword"
                     type={isShowPassword ? "text" : "password"}
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
-                    className="pl-10 pr-4 py-2 w-full border italic border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F2B705] outline-none"
+                    className="pl-10 pr-4 py-3 w-full border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all duration-200 bg-white/80 backdrop-blur-sm"
                     placeholder="Re-enter your password"
                     disabled={isLoading}
                   />
@@ -255,13 +286,15 @@ const PowerShareLogin = () => {
             )}
 
             {error && (
-              <p className="text-sm text-red-600 text-center">{error}</p>
+              <div className="p-3 bg-red-50 border border-red-200 rounded-xl animate-shake">
+                <p className="text-sm text-red-600 text-center">{error}</p>
+              </div>
             )}
 
             <button
               onClick={handleSubmit}
               disabled={isLoading}
-              className="w-full py-2 bg-[#1F7A8C] text-white rounded-lg hover:bg-[#18606F] transition font-medium flex justify-center items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-300 font-semibold flex justify-center items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-[1.02] animate-slide-up-delay-7"
             >
               <span>
                 {isLoading 
@@ -273,11 +306,11 @@ const PowerShareLogin = () => {
             </button>
           </div>
 
-          <p className="text-sm text-center mt-6 text-gray-600">
+          <p className="text-sm text-center mt-8 text-gray-600 animate-fade-in-delay">
             {isLogin ? "Don't have an account?" : "Already have an account?"}
             <button
               onClick={toggleAuthMode}
-              className="ml-1 font-medium text-[#F2B705] hover:text-[#E89A00]"
+              className="ml-1 font-semibold text-green-600 hover:text-green-700 transition-colors"
               disabled={isLoading}
             >
               {isLogin ? "Sign up" : "Sign in"}
@@ -286,13 +319,62 @@ const PowerShareLogin = () => {
         </div>
       </div>
 
-      {/* Right side: Branding */}
-      <div className="hidden md:flex w-1/2 items-center justify-center bg-[#FFEABF]">
-        <div className="max-w-xs text-center px-6">
-          <p className="text-lg italic text-[#333] mb-4">
-            "Lets share power."
-          </p>
-          <img alt="power share"></img>
+      {/* Right side: Enhanced Branding */}
+      <div className="hidden md:flex w-1/2 items-center justify-center relative overflow-hidden">
+        {/* Background decorative elements */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-20 left-20 w-32 h-32 bg-green-300 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-20 right-20 w-40 h-40 bg-emerald-300 rounded-full blur-3xl"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-60 bg-green-200 rounded-full blur-3xl"></div>
+        </div>
+        
+        <div className="max-w-lg text-center px-8 relative z-10">
+          {/* Main image */}
+          <div className="mb-8 animate-float">
+            <Image
+              src="/Wind turbine-bro.svg"
+              alt="Renewable Energy Wind Turbine"
+              width={400}
+              height={400}
+              className="w-full max-w-md mx-auto drop-shadow-2xl"
+              priority
+            />
+          </div>
+          
+          {/* Engaging copy */}
+          <div className="space-y-6">
+            <h3 className="text-4xl font-bold text-gray-800 leading-tight animate-fade-in-up">
+              Let's Share Power
+            </h3>
+            
+            <p className="text-xl text-gray-600 leading-relaxed animate-fade-in-up-delay">
+              Join thousands of households already sharing renewable energy and earning from their solar panels
+            </p>
+            
+            {/* Key benefits */}
+            <div className="grid grid-cols-1 gap-4 mt-8 animate-fade-in-up-delay-2">
+              <div className="flex items-center justify-center space-x-3 p-3 bg-white/60 rounded-xl backdrop-blur-sm">
+                <div className="bg-green-100 p-2 rounded-lg">
+                  <Zap className="w-5 h-5 text-green-600" />
+                </div>
+                <span className="font-medium text-gray-700">Instant Energy Sharing</span>
+              </div>
+              
+              <div className="flex items-center justify-center space-x-3 p-3 bg-white/60 rounded-xl backdrop-blur-sm">
+                <div className="bg-blue-100 p-2 rounded-lg">
+                  <Users className="w-5 h-5 text-blue-600" />
+                </div>
+                <span className="font-medium text-gray-700">Community Driven</span>
+              </div>
+              
+              <div className="flex items-center justify-center space-x-3 p-3 bg-white/60 rounded-xl backdrop-blur-sm">
+                <div className="bg-emerald-100 p-2 rounded-lg">
+                  <Leaf className="w-5 h-5 text-emerald-600" />
+                </div>
+                <span className="font-medium text-gray-700">Sustainable Future</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

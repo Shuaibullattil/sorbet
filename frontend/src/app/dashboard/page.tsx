@@ -204,7 +204,29 @@ const PowerShareDashboard: React.FC = () => {
           {/* Stats Section */}
           <div className="space-y-6">
             <div className='flex items-center justify-between'>
-                <p onClick={() => router.push('/mygrid')}className='p-8 bg-yellow-400 text-white hover:bg-yellow-200 rounded-3xl font-bold'>MY POWER GRID</p>
+              <div className="relative group">
+                {/* Animated background glow */}
+                <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-400 rounded-3xl blur opacity-60 group-hover:opacity-100 animate-pulse"></div>
+                
+                {/* Moving light effect */}
+                <div className="absolute inset-0 rounded-3xl overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white to-transparent opacity-20 transform -skew-x-12 animate-shimmer"></div>
+                </div>
+                
+                {/* Main button */}
+                <button 
+                  onClick={() => router.push('/mygrid')}
+                  className="relative px-8 py-4 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400 text-white font-bold rounded-3xl shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-2xl group-hover:shadow-yellow-500/50"
+                >
+                  {/* Inner glow effect */}
+                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-yellow-300 via-transparent to-yellow-300 opacity-50"></div>
+                  
+                  {/* Button text with enhanced styling */}
+                  <span className="relative z-10 text-white font-extrabold text-lg tracking-wide drop-shadow-md">
+                    ⚡ MY POWER GRID ⚡
+                  </span>
+                </button>
+              </div>
             </div>
             <StatCard 
               title="Available Units" 

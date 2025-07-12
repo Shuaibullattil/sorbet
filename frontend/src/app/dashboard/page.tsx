@@ -191,7 +191,7 @@ const PowerShareDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
       <Navbar />
-      <div className="p-6 max-w-7xl mx-auto">
+      <div className="lg:ml-64 p-6 max-w-7xl mx-auto">
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-800 mb-2">Dashboard</h2>
           <p className="text-gray-600">Monitor your energy trading activity and manage your green energy portfolio</p>

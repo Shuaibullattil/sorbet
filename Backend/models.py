@@ -22,6 +22,8 @@ class UserGrid(BaseModel):
     units : int
     available: bool = True
     units_for_sell: int = 0
+    station: bool = False
+    ports: list[str] = []
     
 
     

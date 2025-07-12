@@ -34,22 +34,6 @@ interface CardProps {
   className?: string;
 }
 
-// Mock data for the chart
-const energyData: EnergyData[] = [
-  { month: 'Jan', bought: 45, sold: 30 },
-  { month: 'Feb', bought: 52, sold: 38 },
-  { month: 'Mar', bought: 48, sold: 42 },
-  { month: 'Apr', bought: 61, sold: 55 },
-  { month: 'May', bought: 55, sold: 48 },
-  { month: 'Jun', bought: 67, sold: 62 },
-  { month: 'Jul', bought: 43, sold: 38 },
-  { month: 'Aug', bought: 58, sold: 52 },
-  { month: 'Sep', bought: 64, sold: 59 },
-  { month: 'Oct', bought: 71, sold: 65 },
-  { month: 'Nov', bought: 69, sold: 63 },
-  { month: 'Dec', bought: 75, sold: 68 }
-];
-
 // Reusable Card Component
 const Card: React.FC<CardProps> = ({ children, className = "" }) => (
   <div className={`bg-white rounded-xl shadow-lg p-6 border border-green-100 ${className}`}>
@@ -100,16 +84,15 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, trend, co
 
 <Navbar/>
 
-// Chart Component
-const EnergyChart: React.FC = () => (
+// Chart Component with real data
+const EnergyChart: React.FC<{ data: EnergyData[] }> = ({ data }) => (
   <Card className="col-span-2">
     <div className="mb-6">
       <h2 className="text-xl font-semibold text-gray-800 mb-2">Energy Trading Overview</h2>
       <p className="text-gray-600 text-sm">Monthly energy units bought and sold</p>
     </div>
-    
     <ResponsiveContainer width="100%" height={350}>
-      <LineChart data={energyData}>
+      <LineChart data={data}>
         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
         <XAxis 
           dataKey="month" 
@@ -159,6 +142,7 @@ const PowerShareDashboard: React.FC = () => {
   const [availableUnits, setAvailableUnits] = useState<number>(0);
   const [unitsForSell, setUnitsForSell] = useState<number>(0);
   const [sellModalOpen, setSellModalOpen] = useState(false);
+  const [energyData, setEnergyData] = useState<EnergyData[]>([]);
   const router = useRouter();
 
   // Fetch units from API
@@ -177,8 +161,23 @@ const PowerShareDashboard: React.FC = () => {
     }
   };
 
+  // Fetch energy summary for chart
+  const fetchEnergySummary = async () => {
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      if (!token) return;
+      const res = await api.get("/energypool/monthly_energy_summary", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setEnergyData(res.data as EnergyData[]);
+    } catch (err) {
+      // Optionally handle error
+    }
+  };
+
   useEffect(() => {
     fetchUnits();
+    fetchEnergySummary();
   }, []);
 
   // Optionally, add a function to refresh dashboard data after selling
@@ -199,7 +198,7 @@ const PowerShareDashboard: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Chart Section */}
           <div className="lg:col-span-2">
-            <EnergyChart />
+            <EnergyChart data={energyData} />
           </div>
           {/* Stats Section */}
           <div className="space-y-6">
